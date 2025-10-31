@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B2B Sales Cycle Flowchart</title>
+    <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reactflow@11/dist/umd/index.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reactflow@11/dist/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+                sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px 32px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #1a202c;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .flowchart-container {
+            flex: 1;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .detail-panel {
+            width: 400px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            overflow-y: auto;
+            transition: all 0.3s ease;
+        }
+
+        .detail-panel.hidden {
+            width: 0;
+            padding: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+
+        .detail-panel h2 {
+            color: #1a202c;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .detail-panel .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .detail-section {
+            margin-top: 24px;
+        }
+
+        .detail-section h3 {
+            color: #4a5568;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .detail-section p {
+            color: #2d3748;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .close-button {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #a0aec0;
+            cursor: pointer;
+            padding: 8px;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .close-button:hover {
+            color: #4a5568;
+        }
+
+        .react-flow__node {
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 16px 20px;
+            min-width: 200px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .react-flow__node:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border-color: #764ba2;
+        }
+
+        .react-flow__node.selected {
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.2);
+        }
+
+        .node-content .node-title {
+            font-weight: 600;
+            color: #1a202c;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .node-content .node-subtitle {
+            color: #718096;
+            font-size: 13px;
+        }
+
+        .react-flow__edge-path {
+            stroke: #667eea;
+            stroke-width: 2;
+        }
+
+        .react-flow__edge.selected .react-flow__edge-path {
+            stroke: #764ba2;
+        }
+
+        .react-flow__handle {
+            background: #667eea;
+            width: 8px;
+            height: 8px;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 16px;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #718096;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4a5568;
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        const { useState, useEffect, useCallback } = React;
+        const { ReactFlow, Controls, Background, useNodesState, useEdgesState } = ReactFlowRenderer;
+
+        // Custom Node Component
+        const CustomNode = ({ data }) => {
+            return (
+                <div className="node-content">
+                    <div className="node-title">{data.label}</div>
+                    {data.subtitle && (
+                        <div className="node-subtitle">{data.subtitle}</div>
+                    )}
+                </div>
+            );
+        };
+
+        const nodeTypes = {
+            custom: CustomNode
+        };
+
+        // Main App Component
+        function App() {
+            const [nodes, setNodes, onNodesChange] = useNodesState([]);
+            const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+            const [loading, setLoading] = useState(true);
+            const [error, setError] = useState(null);
+            const [selectedStep, setSelectedStep] = useState(null);
+            const [rawData, setRawData] = useState([]);
+
+            // Fetch data from Coda API
+            useEffect(() => {
+                fetchData();
+            }, []);
+
+            const fetchData = async () => {
+                setLoading(true);
+                setError(null);
+                
+                try {
+                    const response = await fetch('/api/coda');
+                    if (!response.ok) {
+                        throw new Error(`Failed to fetch data: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    console.log('Fetched data:', data);
+                    
+                    if (data.items && data.items.length > 0) {
+                        setRawData(data.items);
+                        transformDataToFlowchart(data.items);
+                    } else {
+                        setError('No data found in Coda table');
+                    }
+                } catch (err) {
+                    console.error('Error fetching data:', err);
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Transform Coda data to flowchart nodes and edges
+            const transformDataToFlowchart = (items) => {
+                const newNodes = [];
+                const newEdges = [];
+                
+                // Sort items by step number or order field
+                const sortedItems = [...items].sort((a, b) => {
+                    const stepA = getStepNumber(a);
+                    const stepB = getStepNumber(b);
+                    return stepA - stepB;
+                });
+
+                sortedItems.forEach((item, index) => {
+                    const values = item.values;
+                    const nodeId = item.id || `node-${index}`;
+                    
+                    // Extract step information
+                    const stepName = getFieldValue(values, ['name', 'step', 'title', 'stage']);
+                    const stepDescription = getFieldValue(values, ['description', 'details', 'summary']);
+                    const stepNumber = getStepNumber(item) || index + 1;
+                    
+                    // Create node
+                    newNodes.push({
+                        id: nodeId,
+                        type: 'custom',
+                        position: { 
+                            x: 50, 
+                            y: index * 150 
+                        },
+                        data: { 
+                            label: stepName || `Step ${stepNumber}`,
+                            subtitle: truncate(stepDescription, 50),
+                            fullData: item
+                        }
+                    });
+
+                    // Create edge to next step
+                    if (index > 0) {
+                        const prevNodeId = sortedItems[index - 1].id || `node-${index - 1}`;
+                        newEdges.push({
+                            id: `edge-${prevNodeId}-${nodeId}`,
+                            source: prevNodeId,
+                            target: nodeId,
+                            type: 'smoothstep',
+                            animated: true
+                        });
+                    }
+                });
+
+                setNodes(newNodes);
+                setEdges(newEdges);
+            };
+
+            // Helper function to get field value by priority
+            const getFieldValue = (values, fieldNames) => {
+                for (const fieldName of fieldNames) {
+                    const field = Object.keys(values).find(key => 
+                        key.toLowerCase().includes(fieldName.toLowerCase())
+                    );
+                    if (field && values[field]) {
+                        return values[field];
+                    }
+                }
+                return null;
+            };
+
+            // Helper function to get step number
+            const getStepNumber = (item) => {
+                const values = item.values;
+                const stepField = getFieldValue(values, ['step', 'order', 'number', 'sequence']);
+                if (stepField) {
+                    const num = parseInt(stepField);
+                    if (!isNaN(num)) return num;
+                }
+                return null;
+            };
+
+            // Helper function to truncate text
+            const truncate = (text, length) => {
+                if (!text) return '';
+                return text.length > length ? text.substring(0, length) + '...' : text;
+            };
+
+            // Handle node click
+            const onNodeClick = useCallback((event, node) => {
+                setSelectedStep(node.data.fullData);
+            }, []);
+
+            // Close detail panel
+            const closeDetailPanel = () => {
+                setSelectedStep(null);
+            };
+
+            // Render detail panel content
+            const renderDetailPanel = () => {
+                if (!selectedStep) return null;
+
+                const values = selectedStep.values;
+                const allFields = Object.entries(values).filter(([key, value]) => value);
+
+                return (
+                    <div className="detail-panel">
+                        <button className="close-button" onClick={closeDetailPanel}>?</button>
+                        
+                        <div className="step-number">
+                            Step {getStepNumber(selectedStep) || ''}
+                        </div>
+                        
+                        <h2>{getFieldValue(values, ['name', 'step', 'title', 'stage']) || 'Step Details'}</h2>
+                        
+                        {allFields.map(([key, value], index) => (
+                            <div key={index} className="detail-section">
+                                <h3>{formatFieldName(key)}</h3>
+                                <p>{formatFieldValue(value)}</p>
+                            </div>
+                        ))}
+                    </div>
+                );
+            };
+
+            // Format field name
+            const formatFieldName = (name) => {
+                return name
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, str => str.toUpperCase())
+                    .trim();
+            };
+
+            // Format field value
+            const formatFieldValue = (value) => {
+                if (Array.isArray(value)) {
+                    return value.join(', ');
+                }
+                if (typeof value === 'object' && value !== null) {
+                    return JSON.stringify(value, null, 2);
+                }
+                return String(value);
+            };
+
+            return (
+                <div className="app-container">
+                    <div className="header">
+                        <h1>B2B Sales Cycle Flowchart</h1>
+                        <p>Click on any step to view detailed information</p>
+                    </div>
+                    
+                    <div className="main-content">
+                        <div className="flowchart-container">
+                            {loading && (
+                                <div className="loading-overlay">
+                                    <div className="loading-spinner"></div>
+                                </div>
+                            )}
+                            
+                            {error && (
+                                <div className="error-message">
+                                    Error: {error}
+                                </div>
+                            )}
+                            
+                            {!loading && !error && nodes.length === 0 && (
+                                <div className="empty-state">
+                                    <div className="empty-state-icon">??</div>
+                                    <div className="empty-state-title">No Data Available</div>
+                                    <div className="empty-state-text">
+                                        Please check your Coda database configuration
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {!loading && !error && nodes.length > 0 && (
+                                <ReactFlow
+                                    nodes={nodes}
+                                    edges={edges}
+                                    onNodesChange={onNodesChange}
+                                    onEdgesChange={onEdgesChange}
+                                    onNodeClick={onNodeClick}
+                                    nodeTypes={nodeTypes}
+                                    fitView
+                                    attributionPosition="bottom-right"
+                                >
+                                    <Background color="#e2e8f0" gap={16} />
+                                    <Controls />
+                                </ReactFlow>
+                            )}
+                        </div>
+                        
+                        {selectedStep && renderDetailPanel()}
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "name": "b2b-sales-cycle-flowchart",
+  "version": "1.0.0",
+  "description": "Interactive flowchart visualization for B2B sales cycle data from Coda",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step needed - static HTML'",
+    "deploy": "vercel --prod"
+  },
+  "keywords": [
+    "coda",
+    "flowchart",
+    "sales",
+    "b2b",
+    "visualization"
+  ],
+  "author": "",
+  "license": "MIT"
+}
